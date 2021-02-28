@@ -1,0 +1,86 @@
+<template>
+  <v-app>
+      <v-card>
+        <v-toolbar color="green darken-1" >
+          <v-app-bar-nav-icon @click.native.stop="drawer = !drawer" class="hidden-sm-and-up"></v-app-bar-nav-icon>
+          <v-toolbar-title>
+            <router-link to="/" custom v-slot="{ navigate }" style="cursor: pointer">
+              <span @click="navigate" @keypress.enter="navigate" role="link">RBX-Crypto</span>
+            </router-link>
+          </v-toolbar-title>
+          <v-spacer></v-spacer>
+          <v-toolbar-items class="hidden-xs-only">
+            <v-btn v-for="item in menuItems" :key="item.title" text router :to="item.link" >
+              <v-icon left>{{ item.icon }}</v-icon>  
+              {{ item.title }}
+            </v-btn>
+          </v-toolbar-items>
+        </v-toolbar>
+        <v-main>
+          <router-view></router-view>
+        </v-main>
+      </v-card>
+      <v-navigation-drawer
+        v-model="drawer"
+        absolute
+        temporary
+      >
+        <v-list-item>
+          <v-list-item-avatar>
+            <v-img src="https://randomuser.me/api/portraits/men/78.jpg"></v-img>
+          </v-list-item-avatar>
+
+          <v-list-item-content>
+            <v-list-item-title>John Leider</v-list-item-title>
+          </v-list-item-content>
+        </v-list-item>
+
+        <v-divider></v-divider>
+
+        <v-list dense>
+          <v-list-item v-for="item in menuItems" :key="item.title" link router :to="item.link">
+            <v-list-item-icon>
+              <v-icon>{{ item.icon }}</v-icon>
+            </v-list-item-icon>
+
+            <v-list-item-content>
+              <v-list-item-title>{{ item.title }}</v-list-item-title>
+            </v-list-item-content>
+          </v-list-item>
+        </v-list>
+      </v-navigation-drawer>
+  </v-app>
+</template>
+
+<script>
+export default {
+  name: 'App',
+
+  components: {
+  },
+
+  data: () => ({
+    //
+    drawer: null,
+  }),
+  computed: {
+    menuItems () {
+      let menuItems = [
+          { title: 'Sign Up', icon: 'mdi-face', link: '/users/signup' },
+          { title: 'Sign In', icon: 'mdi-lock-open', link: '/users/signin' },
+        ]
+        if (this.userIsAuthenticated) {
+          menuItems = [
+            { title: 'Mi portafolio', icon: 'mdi-account-supervisor', link: '/portfolio' },
+            { title: 'Mercado', icon: 'mdi-calendar-plus', link: '/market' },
+            { title: 'Profile', icon: 'mdi-account', link: '/profile' },
+          ]
+        }
+        return menuItems
+    },
+    userIsAuthenticated () {
+      return false;//Boolean(this.$store.getters.user)
+    }
+  }
+};
+</script>

@@ -1,0 +1,30 @@
+{
+  "name": "vue-binance",
+  "version": "1.0.0",
+  "description": "MEVN Binance",
+  "main": "main.js",
+  "scripts": {
+    "start": "node server/main.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Darío Rumbo",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^5.0.0",
+    "binance-api-node": "^0.10.30",
+    "body-parser": "^1.19.0",
+    "connect-mongo": "^3.2.0",
+    "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
+    "csurf": "^1.11.0",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "express-session": "^1.17.1",
+    "express-validator": "^6.9.2",
+    "mongoose": "^5.11.17",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
+    "url": "^0.11.0",
+    "win-node-env": "^0.4.0"
+  }
+}
