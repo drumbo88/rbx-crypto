@@ -1,34 +1,21 @@
 <template>
 	<v-container>
-		<chart class="chart" :constructor-type="'chart'" :options="chartOptions" :key="'lalala'"></chart>
+		
 	</v-container>
 </template>
 
 <script>
-	import { Chart } from "highcharts-vue";
-import { mapGetters } from 'vuex';
-	const maxTotal = 0
-
+import { mapGetters } from 'vuex'
 	export default {
-		name: 'Buys',
+		name: 'BuysList',
 		props: ['mins', 'symbol', 'coin', 'base'],
-		components: { Chart },
+		components: {  },
 		data: () => ({
 			BTCUSDT: null,
 			infoBuys: null,
 			series: [],
 			categories: [],
 			qTotals: [],
-			coinsColors: [
-				'050,100,200',
-				'050,200,100',
-				'200,050,100',
-				'100,200,050',
-				'200,200,100',
-				'200,100,100',
-				'050,150,050',
-				'100,050,200',
-			],
 			pointWidth: null,
 		}),
 		created () {
@@ -37,10 +24,10 @@ import { mapGetters } from 'vuex';
 			//let symbol = this.getSymbol()
 			//this.API_GET_PROFILE_ORDERS = process.env.VUE_APP_API_URL + `/profile/orders${symbol ? '/'+symbol : ''}`
 			//setInterval(this.getTradeData, 60000)
-			if (this.getSymbol('BTCUSDT'))
+			/*if (this.getSymbol('BTCUSDT'))
 				this.BTCUSDT = this.getSymbol('BTCUSDT').price
 			this.getProfileOrders()
-			setInterval(() => this.getProfileOrders(), this.getIntervalMins * 60000)
+			setInterval(() => this.getProfileOrders(), this.getIntervalMins * 60000)*/
 		},
 		methods: {
 			async getProfileOrders () 
@@ -48,9 +35,9 @@ import { mapGetters } from 'vuex';
 				let promises = []
 				//if (!this.getPrices().length)
 					promises.push(this.$store.dispatch('tickers/get', {}/*this.getSymbol()*/))
-				
+
 				if (!this.getPrices().length)
-					promises.push(this.$store.dispatch('wallet/loadUnsoldBuyOrders', {}/*this.getSymbol()*/))
+					promises.push(this.$store.dispatch('loadBuysList', {}/*this.getSymbol()*/))
 
 				if (promises.length)
 					await Promise.all(promises)
@@ -60,18 +47,17 @@ import { mapGetters } from 'vuex';
 				this.series = []
 				this.qTotals = []
 				this.categories = []
-				let numCoins = 0
-				let coinsObjs = this.getUnsoldBuyOrders(/*this.getSymbol()*/)
-				let volatilities = this.getVolatilities
-				for (let j=0; j<coinsObjs.length; j++) {
+				//let numCoins = 0
+				/*let coinsObjs = this.$store.getters.getBuysList() // (this.getSymbol())
+                for (let j=0; j<coinsObjs.length; j++) {
 					let coinObj = coinsObjs[j]
 					coinObj.volatility = 0
-					let actualPrice = (coinObj.name == 'BTC') ? this.BTCUSDT : this.getPrice(coinObj.name + 'BTC')
+					let actualPrice = (coinObj.name == 'BTC') ? this.BTCUSDT : this.getSymbol(coinObj.name + 'BTC').price
 					let refPrice = actualPrice / ((coinObj.name == 'BTC') ? 1 : this.BTCUSDT)
 					let symbol = (coinObj.name == 'BTC') ? 'BTCUSDT' : (coinObj.name + 'BTC')
 					let totalChange = 0, totalPrice = 0, symVolat = volatilities[symbol]
 					console.log(coinObj.name, actualPrice, refPrice)
-					if (symVolat && symVolat.length) {
+					if (symVolat.length) {
 						console.log(`Volat. '${symVolat.length}' desde ${new Date(symVolat[0].openTime).toLocaleString()} a ${actualPrice.toFixed(8)}`)
 						for (let j=0; j<symVolat.length; j++) {
 							let volat = symVolat[j]
@@ -149,18 +135,17 @@ import { mapGetters } from 'vuex';
 					})
 
 					//qtyBuys = qtySells; qtySells = qtyBuys
-					/*console.log(`COIN: ${coinObj.name}`)
-					console.log(`REM: ${coinObj.buys.length}`)*/
+					//console.log(`COIN: ${coinObj.name}`)
+					//console.log(`REM: ${coinObj.buys.length}`)
 				}
 				this.pointWidth = 80 + (20 / this.series.length)
-				
+				*/
 			}
 		},
 		computed: {
-			...mapGetters('tickers', ['getSymbol','getPrice','getPrices','getVolatilities']),
-			...mapGetters('wallet', ['getUnsoldBuyOrders','getTotalBalanceBTC']),
-			//...mapGetters('balance', ['unsoldBuyOrders']),
-			//...mapGetters('balance', ['getVolatilities']),
+			...mapGetters('tickers', ['getSymbol','getPrices']),
+			...mapGetters('balance', ['getTotalBalanceBTC']),
+			//...mapGetters('balance', ['getBuysList']),
 
 			getIntervalMins() {
 				let mins = this.mins || 5
@@ -176,6 +161,7 @@ import { mapGetters } from 'vuex';
 			chartOptions() {     
 				const BTCUSDT = this.BTCUSDT
 				const TOTAL_BTC = this.getTotalBalanceBTC
+                const maxTotal = 0
 				
 				let options = {
 					chart: { type: 'column' },

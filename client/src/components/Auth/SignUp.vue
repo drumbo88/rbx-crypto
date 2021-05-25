@@ -5,7 +5,12 @@
                 <v-card class="my-4">
                     <v-card-text>
                         <v-container>
-                            <form @submit.prevent="onSignUp">
+                            <form @submit.prevent="signUserUp">
+                                <v-layout row>
+                                    <v-flex xs12>
+                                        <v-text-field id="name" name="name" label="Name" v-model="name" type="name" required></v-text-field>
+                                    </v-flex>
+                                </v-layout>
                                 <v-layout row>
                                     <v-flex xs12>
                                         <v-text-field id="email" name="email" label="Email" v-model="email" type="email" required></v-text-field>
@@ -24,12 +29,11 @@
                                 </v-layout>
                                 <v-layout row>
                                     <v-flex xs12>
-                                        <v-btn type="submit" :disabled="loading" :loading="loading">
+                                        <v-btn type="submit" :disabled="loading" :loading="loading" class="primary">
                                             Sign Up
                                         </v-btn>
                                     </v-flex>
                                 </v-layout>
-                                <!--input type="hidden" name="_csrf" :value="csrf" /-->
                             </form>
                         </v-container>
                     </v-card-text>
@@ -45,14 +49,14 @@
 </template>
 
 <script>
-import axios from 'axios'
+//import axios from 'axios'
 
 export default {
   name: 'SignUp',
   data() {
     return {
-      //csrf: '',
       loading: false,
+      name: '',
       email: '',
       password: '',
       confirmPassword: '',
@@ -60,34 +64,29 @@ export default {
     }
   },
   methods: {
-      onSignUp () {
-          //this.$store.dispatch('signUserUp', { email: this.email, password: this.password })
-          return new Promise((resolve, reject) => {
-            try {
-                const res = axios.get(process.env.VUE_APP_API_URL)
-                const data = res.data
-                resolve(
-                    data.map(post => ({
-                        ...post,
-                        createdAt: new Date(post.createdAt)
-                    }))
-                )
-            } catch (err) {
-                reject(err)
-            }
-          })
+      signUserUp () {
+        this.$store.dispatch('signUp', {
+            name: this.name,
+            email: this.email,
+            password: this.password,
+            confirmPassword: this.confirmPassword,
+        })
+        .then(() => this.$router.push({ name: 'Home' }))
+        .catch((err) => {
+            this.errores.push(err.message)
+        })
       },
       onDismissed () {
           //this.$store.dispatch('clearError')
       },
-      getInitData() {
+      /*getInitData() {
         axios.get(this.API_COMPONENT_INIT)
           .then(response => {
             console.log(response)
-            //axios.defaults.headers.common['X-CSRF-TOKEN'] = response.data.csrfToken
+            //axios.defaults.headers.common['x-csrf-token'] = response.data.csrfToken
           }, (err) => console.log(err))
           .then(response => (this.csrf = response.csrfToken))
-      }
+      }*/
   },
   computed: {
     hayErrores () {
@@ -98,7 +97,7 @@ export default {
     },
   },
   mounted() {
-      this.API_COMPONENT_INIT = process.env.VUE_APP_API_URL + `/users/signin`
+      this.API_COMPONENT_INIT = process.env.VUE_APP_API_URL + `/users/signup`
       //this.getInitData()
   }
 }

@@ -69,9 +69,9 @@
             v-for="(item, pos) in props.items"
             :key="item.symbol"
             cols="12"
-            sm="6"
-            md="4"
-            lg="3"
+            sm="12"
+            md="6"
+            lg="6"
           >
             <v-card>
               <v-card-title class="subheading font-weight-bold">
@@ -169,8 +169,7 @@
 </template>
 
 <script>
-  import axios from 'axios';
-
+import { mapActions, mapGetters } from 'vuex'
   export default {
     name: 'MarketTopChanges',
     props: ['mins', 'limit', 'symbol', 'coin', 'base'],
@@ -180,7 +179,7 @@
       filter: {},
       sortDesc: false,
       page: 1,
-      itemsPerPage: 8,
+      itemsPerPage: 4,
       sortBy: null,
       fields: [
         { text: 'Symbol', propName: 'symbol' },
@@ -213,129 +212,56 @@
         if (!('toStr' in field)) 
           field.toStr = field.propName 
       }
+      this.getData()
+      // El setInterval solo funciona cuando llamo a un method (no sé por qué °_°)
+      setInterval(() => this.getData(), this.getIntervalMins * 60000)
     },
     mounted () {
-
-      let coin = this.coin || ''
-      let base = this.base || ''
-      //let limit = this.limit || 10
-      if (this.symbol) {
-        let symbolParts = this.symbol.split('-').slice(0, 2)
-        symbolParts = symbolParts.reverse()
-        base = symbolParts[0]
-        coin = symbolParts[1]
-        //[this.base, this.coin] = symbolParts.reverse()
+      /*let vue = this
+      let loadPrices = function() { 
+        return vue.$store.dispatch('loadPrices', vue.symbol) 
       }
-      let symbol = (coin || base) ? `${coin}-${base}` : ''
-      this.API_GET_PRICES_DATA = process.env.VUE_APP_API_URL + `/markets/${symbol}`
-      this.getPrices()
+      setInterval(() => loadPrices, this.getIntervalMins * 60000)
+      loadPrices()*/
     },
-    updated() {
+    /*updated() {
       let mins = this.mins || 5
       const unSeg = 1/60
       if (mins < unSeg)
         mins = unSeg
       //console.log (this.coin, this.lastCoin, this.lastCoin !== null && this.lastCoin !== this.coin)
-      if (this.lastCoin !== null && this.lastCoin !== this.coin) 
+      if (this.lastCoin !== null && this.lastCoin !== this.coin) {
         clearInterval(this.intervalId)
-      if (this.lastCoin !== this.coin) 
-        this.intervalId = setInterval(this.getPrices, mins * 60000)
+        this.intervalId = null
+      }
+      if (!this.intervalId && this.lastCoin !== this.coin) 
+        this.intervalId = setInterval(() => this.getPrices(), thismins * 60000)
       //if (this.lastCoin === null)
       this.lastCoin = this.coin
-    },
+    },*/
     methods: {
-      getPrices () {
-        let vue = this
-        axios.get(this.API_GET_PRICES_DATA)
-          .then(response => {
-            let times = Object.keys(vue.symbols)
-            //vue.lastTime = times.length ? times[times.length - 1] : null
-            let currentTime = response.data.time
-            if (!times.length)
-              setInterval(() => { this.firstTime = ''; this.firstTime = currentTime }, 1000)
-            console.log(new Date(currentTime).toLocaleString())
-            let lastPrices = vue.symbols[currentTime] = []
-            let symbols = response.data.data
-            for (let sym in symbols) {
-              let price = parseFloat(symbols[sym])
-              let symbolObj = { 
-                symbol: sym, 
-                price, 
-                changes: [],
-                getChange(time) { 
-                  return this.changes.find(chg => chg.time == time) 
-                },
-                totalChangeValue() {
-                  return this.firstChange ? this.firstChange.percStr() : null
-                },
-                lastChangeValue() {
-                  return this.lastChange ? this.lastChange.percStr() : null
-                },
-                totalChangeStr() {
-                  return this.firstChange ? this.firstChange.percStr() : '-'
-                },
-                lastChangeStr() {
-                  return this.lastChange ? this.lastChange.percStr() : '-'
-                },
-                priceStr() { 
-                  return this.price.toFixed(8)
-                },
-              } 
-              for (let time of times) {
-                let prevSymObj = vue.getSymbol(sym, time)
-                if (!prevSymObj) 
-                  continue
-                let prevPrice = prevSymObj.price
-                let porcChg = ((price / prevPrice) - 1) * 100
-                let change = {
-                  time: time,
-                  perc: porcChg,
-                  percStr() { return this.perc.toFixed(2)+'%' },
-                }
-                if (!symbolObj.changes.length)
-                  symbolObj.firstChange = change
-                symbolObj.lastChange = change
-                if (symbolObj.changes.length < 2) // Solo primero y último
-                  symbolObj.changes.push(change)
-                else if (symbolObj.changes.length == 2)
-                  symbolObj.changes[1] = change
-
-                //symbolObj.chgStr = porcChg.toFixed(2)+'%'
-                //symbolObj.chgTotalStr = porcChg.toFixed(2)+'%'
-              }
-              lastPrices.push(symbolObj)
-            }
-            vue.lastTime = currentTime
-            vue.items = vue.lastTime ? vue.getSymbols() : [] 
-            //vue.items = vue.lastTime ? vue.topChanges(lastTime) : [] //'Esperando recibir datos.'
-            //vue.lastCoin = vue.coin
-          })
-      },
-      getSymbol(symbol, time) { // Retorna symbolObj en time o más reciente
-        return this.getSymbols(time).find(symObj => symObj.symbol == symbol)
-      },
-      getSymbols(time) {
-        return this.symbols[time || this.lastTime]
-      }, 
+      ...mapActions('tickers', ['getPrices']),
       /*topChanges(time) {
         let limit = this.limit || 5
         if (this.lastCoin === null)
-          return this.getSymbols().sort((a, b) => {
+          return this.getPrices().sort((a, b) => {
             let chgA = a.price, chgB = b.price
             if (chgA == chgB) return 0
             return (chgA > chgB) ? -1 : 1
           }).slice(0, limit + 1)
-        return this.getSymbols().sort((a, b) => {
+        return this.getPrices().sort((a, b) => {
           let chgA = a.getChange(time), chgB = b.getChange(time)
           if (!chgA || !chgB || chgA.perc == chgB.perc) return 0
           return (chgA.perc > chgB.perc) ? -1 : 1
         }).slice(0, limit)
       },*/
       nextPage () {
-        if (this.page + 1 <= this.numberOfPages) this.page += 1
+        if (this.page + 1 <= this.numberOfPages) 
+          this.page += 1
       },
       formerPage () {
-        if (this.page - 1 >= 1) this.page -= 1
+        if (this.page - 1 >= 1) 
+          this.page -= 1
       },
       updateItemsPerPage (number) {
         this.itemsPerPage = number
@@ -366,14 +292,35 @@
           if (valA == valB)
             return 0
           return sortDesc[0]
-            ? (valA > valB ? 1 : -1)
-            : (valA < valB ? 1 : -1)
+            ? ((valA > valB) ? 1 : -1)
+            : ((valA < valB) ? 1 : -1)
           //switch (this.fields[sortBy].type) 
         })
         return items
-      }
+      },
+      getData() {
+          return this.$store.dispatch('tickers/get', { symbol: this.symbol })
+            .then(() => {
+              this.items = this.getPrices()
+            })
+            .catch(err => {
+              console.log("getPrices Err", err)
+            })
+      },
     },
     computed: {
+			...mapGetters('tickers', ['getSymbol','getPrices']),
+			...mapGetters('balance', ['getTotalBalanceBTC']),
+			//...mapGetters('balance', ['getBuysList']),
+
+      getIntervalMins() {
+        let mins = this.mins || 5
+        const unSeg = 1/60
+        if (mins < unSeg)
+          mins = unSeg
+        console.log(`Repetición de peticiones: ${mins} minutos`)
+        return mins
+      },
       sortIndex () {
         return this.fields.findIndex(f => f.propName == this.sortBy)
       },
@@ -384,10 +331,10 @@
         return Math.ceil(this.items.length / this.itemsPerPage)
       },
       firstTimeStr () {
-        return this.firstTime ? this.$moment(this.firstTime).fromNow() : ''
+        return this.$store.state.firstTime ? this.$moment(this.$store.state.firstTime).fromNow() : ''
       },
       lastTimeStr () {
-        return this.lastTime ? this.$moment(this.lastTime).fromNow() : ''
+        return this.$store.state.lastTime ? this.$moment(this.$store.state.lastTime).fromNow() : ''
       },
       cardTitle() {
         return this.fields[0] // El primero

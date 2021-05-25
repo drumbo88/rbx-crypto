@@ -1,11 +1,21 @@
-var mongoose = require('mongoose');
-var Schema = mongoose.Schema;
-var bcrypt = require('bcrypt');
+let mongoose = require('mongoose');
+let Schema = mongoose.Schema;
+let bcrypt = require('bcrypt');
 
 // Plantilla o estructura
-var schema = new Schema({
-    email: { type: String, required: true },
-    password: { type: String, required: true },
+let schema = new Schema({
+    name: { 
+        type: String, required: true,
+        min: 3, max: 255,
+    },
+    email: { 
+        type: String, required: true,
+        min: 6, max: 255
+    },
+    password: { 
+        type: String, required: true, 
+        min: 6, max: 1024
+    },
 })
 
 // Helper methods (métodos para el modelo User)
