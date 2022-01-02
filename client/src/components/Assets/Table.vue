@@ -30,9 +30,6 @@
 			<rbx-chart-candles v-if="showModal"
 				:symbol="symbol"
 			/>
-			<rbx-chart-candles v-if="showModal"
-				:symbol="symbol"
-			/>
 		</rbx-modal>
 	</div>
 </template>
@@ -45,11 +42,11 @@
 
 	export default {
 		name: 'AssetsTable',
-		//props: ['mins', 'symbol', 'coin', 'base'],
-		props: ['currency'],
+		//props: ['mins', 'symbol', 'selectedCoin', 'base'],
+		props: ['currency', 'base'],
 		components: { RbxModal, RbxTable, RbxChartCandles },
 		data: () => ({
-			coin: null,
+			selectedCoin: null,
 			tableColumns: [
 				{ attr: { label: 'Asset', 		prop: 'name' }, slot: true },
 				{ attr: { label: 'Balance ($)',	prop: 'balanceUSDT', type: Number } },
@@ -63,14 +60,12 @@
 		created () {
 		},
 		async mounted () {
-			if (!this.currency)
-				this.currency = this.getCurrency
 			this.getAssetsData()
 			setInterval(() => this.getAssetsData(), this.getIntervalMins * 60000)
 		},
 		methods: {
 			closeModal(done) {
-				this.coin = null
+				this.selectedCoin = null
 				done();
 			},
 			tableFormatter(index) { 
@@ -118,12 +113,12 @@
 				]
 			},
 			verDetalle(index) {
-				this.coin = index
+				this.selectedCoin = index
 			}
 		},
 		computed: {
 			...mapGetters('tickers', [
-				'getCurrency',
+				'getCurrency', 'getCurrencyPrice',
 				'getSymbol', 'getPrice', 'getPrices', 'getVolatilities'
 			]),
 			...mapGetters('wallet', [
@@ -135,7 +130,7 @@
 			]),
 
 			showModal() {
-				return Boolean(this.coin)
+				return Boolean(this.selectedCoin)
 			},
 
 			getIntervalMins() {
@@ -147,30 +142,37 @@
 				return mins
 			},
 
-			modal() { return this.showModal ? 'Detalles de ' + this.coin : null },
-			symbol() { 
-				const currency = (this.coin == this.currency) 
-					? ((this.coin == 'USDT') ? 'BTC' : 'USDT')
-					: this.currency
-				return this.coin ? this.coin + currency : null 
+			modal() { return this.showModal ? 'Detalles de ' + this.selectedCoin : null },
+
+			myCurrency() {
+				return this.getCurrency(this.currency)
 			},
-			currencyPrice() { 
+			myCurrencyPrice() {
+				return this.getCurrencyPrice(this.myCurrency) || 0
+			},
+			symbol() { 
+				const baseCurrency = (this.selectedCoin == this.myCurrency) 
+					? ((this.selectedCoin == 'USDT') ? 'BTC' : 'USDT')
+					: this.myCurrency
+				return this.selectedCoin ? this.selectedCoin + baseCurrency : null 
+			},
+			/*currencyPrice() { 
 				const currency = (this.currency == 'BTC') ? 'USDT' : this.currency
 				return this.getPrice('BTC' + currency) || 0 
-			},
+			},*/
 
 			tableData() {
 				let data = []
 
-				if (this.currencyPrice) {
-					this.getAssetsPrices(this.currency).forEach(asset => {
-						let value = this.currency ? asset.total : asset.quantity
+				if (this.myCurrency) {
+					this.getAssetsPrices(this.myCurrency).forEach(asset => {
+						let value = this.myCurrency ? asset.total : asset.quantity
 						if (value > 0)
 							data.push({ 
 								name: asset.name, 
 								y: value,
 								balanceUSDT: value.toFixed(2),
-								priceBTC: (asset.price / this.currencyPrice).toFixed(8),
+								priceBTC: (asset.price / this.myCurrencyPrice).toFixed(8),
 								priceUSDT: (asset.price).toFixed(2),
 								balancePerc: (100 * value / this.totalBalanceUSDT).toFixed(2),
 								changePerc: (10-20*Math.random()).toFixed(2),

@@ -169,7 +169,7 @@
 </template>
 
 <script>
-import { mapActions, mapGetters } from 'vuex'
+import { mapGetters } from 'vuex'
   export default {
     name: 'MarketTopChanges',
     props: ['mins', 'limit', 'symbol', 'coin', 'base'],
@@ -240,7 +240,7 @@ import { mapActions, mapGetters } from 'vuex'
       this.lastCoin = this.coin
     },*/
     methods: {
-      ...mapActions('tickers', ['getPrices']),
+      //...mapActions('tickers', ['getPrices']),
       /*topChanges(time) {
         let limit = this.limit || 5
         if (this.lastCoin === null)

@@ -32,13 +32,14 @@ export const actions = {
                 let /*qtyBuys = 0, qtySells = 0, */coins = [], coinsObjs = [], coinObj
                 const _USDT = response.data._USDT 
                 
+                // Recorro las órdenes
                 for (let order of response.data.data) 
                 {
                     let base = ''
                     if (order.symbol == 'BTCUSDT')
                         base = 'USDT'
-                    else if (order.symbol.endsWith('BTC')) 
-                        base = 'BTC'
+                    else if (order.symbol.endsWith('USDT')) 
+                        base = 'USDT'
                     else
                         continue
                     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Para que solo vea XXXBTC
@@ -54,7 +55,7 @@ export const actions = {
                             buys: [],
                             qtyBuys: 0,
                             qtySells: 0,
-                            price: coin == 'BTC' ? 1 : order.price,
+                            price: coin == 'USDT' ? 1 : order.price,
                             quantity: 0,
                         }
                         coinsObjs.push(coinObj)

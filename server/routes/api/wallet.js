@@ -36,8 +36,10 @@ router.get('/unsoldBuys/:symbol?/:status?', async (req, res, next) => {
         myBinance.parseRes(filteredData).then(x => res.json(x))
         //res.json()
     }
-    catch (err) {
-        res.send(err+"\n\n"+JSON.stringify(myBinance))
+    catch (err) {console.log(String(err))
+        myBinance.error = err
+        myBinance.error.message = String(err)
+        res.send(JSON.stringify(myBinance))
     }
 })
 
@@ -72,7 +74,8 @@ router.get('/:symbol?', async (req, res, next) => {
         //res.json()
     }
     catch (err) {
-        res.send(err+"\n\n"+JSON.stringify(myBinance))
+        myBinance.error = { ...err, message: err.toString() }
+        res.send(JSON.stringify(myBinance))
     }
 })
 

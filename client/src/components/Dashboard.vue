@@ -2,10 +2,10 @@
     <v-container>
         <v-row>
         <v-col>
-            <MarketTopChanges :mins="mins" :coin="ucCoin" base="BTC" />
+            <MarketTopChanges :mins="mins" :coin="ucCoin" base="USDT" />
         </v-col>
         <v-col>
-            <Buys :mins="mins" />
+            <Buys :mins="mins" base="USDT" />
         </v-col>
         </v-row>
         <v-row>

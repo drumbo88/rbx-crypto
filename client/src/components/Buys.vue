@@ -6,7 +6,7 @@
 
 <script>
 	import { Chart } from "highcharts-vue";
-import { mapGetters } from 'vuex';
+	import { mapGetters } from 'vuex';
 	const maxTotal = 0
 
 	export default {
@@ -45,6 +45,7 @@ import { mapGetters } from 'vuex';
 		methods: {
 			async getProfileOrders () 
 			{
+				// Obtengo precios y compras realizadas
 				let promises = []
 				//if (!this.getPrices().length)
 					promises.push(this.$store.dispatch('tickers/get', {}/*this.getSymbol()*/))
@@ -57,13 +58,17 @@ import { mapGetters } from 'vuex';
 
 				this.BTCUSDT = this.getSymbol('BTCUSDT').price
 
+				/*	Necesito agruparlos por moneda y compra. Las monedas serán columnas (categorías),
+					y las compras (órdenes realizadas) de cada moneda estarán apiladas */
 				this.series = []
 				this.qTotals = []
 				this.categories = []
 				let numCoins = 0
 				let coinsObjs = this.getUnsoldBuyOrders(/*this.getSymbol()*/)
 				let volatilities = this.getVolatilities
-				for (let j=0; j<coinsObjs.length; j++) {
+				
+				for (let j=0; j<coinsObjs.length; j++) 
+				{
 					let coinObj = coinsObjs[j]
 					coinObj.volatility = 0
 					let actualPrice = (coinObj.name == 'BTC') ? this.BTCUSDT : this.getPrice(coinObj.name + 'BTC')
@@ -96,7 +101,10 @@ import { mapGetters } from 'vuex';
 						buyOrder.actualTotalPriceUSD = buyOrder.actualTotalPrice * this.BTCUSDT
 						//console.log(coinObj.name, buyOrder.quantity , actualPrice,buyOrder.actualTotalPrice * this.BTCUSDT)
 						
-						if (Math.abs(buyOrder.actualTotalPriceUSD) < 1) continue
+						if (Math.abs(buyOrder.actualTotalPriceUSD) < 1) {
+							//console.log(buyOrder)
+							continue
+						}
 						
 						totalPrice += buyOrder.price * buyOrder.quantity
 						totalChange += buyOrder.change * buyOrder.quantity
@@ -133,7 +141,6 @@ import { mapGetters } from 'vuex';
 						});
 					}
 					//if (!totalChange) continue
-
 					numCoins++
 					this.categories.push(`${coinObj.name} <br/><small>(V: ${coinObj.volatility.toFixed(2)}%)</small>`)
 					let totalChangePerc = totalChange * 100 / totalPrice
@@ -152,8 +159,7 @@ import { mapGetters } from 'vuex';
 					/*console.log(`COIN: ${coinObj.name}`)
 					console.log(`REM: ${coinObj.buys.length}`)*/
 				}
-				this.pointWidth = 80 + (20 / this.series.length)
-				
+				this.pointWidth = 80 + (20 / this.series.length)		
 			}
 		},
 		computed: {
@@ -187,7 +193,7 @@ import { mapGetters } from 'vuex';
 					yAxis: {
 						reversedStacks: false,
 						// Nombre del EJE Y
-						title: { text: 'Equivalente BTC' },
+						title: { text: 'Equivalente '+this.base },
 						// Medidas del EJE Y
 						labels: { 
 							formatter() { 
@@ -204,7 +210,7 @@ import { mapGetters } from 'vuex';
 							formatter() { 
 								let qTotal = this.options.qTotals[this.x]
 								return `
-									<b>${this.total.toFixed(8)} BTC = $${(this.total * BTCUSDT).toFixed(2)}</b>
+									<b>${this.total.toFixed(8)} ${this.base} = $${(this.total * BTCUSDT).toFixed(2)}</b>
 									<br />
 									<span style="color: ${qTotal.chgColor}">
 										${qTotal.actualPrice.toFixed(8)} (${qTotal.chgPercStr})
@@ -247,7 +253,7 @@ import { mapGetters } from 'vuex';
 					}
 				}
 				//new Audio('/public/popup 8.mp3').play();
-				console.log('GRAFICO CONFIGURADO')
+				console.log('GRAFICO CONFIGURADO', options)
 				return options
 			},
 		}

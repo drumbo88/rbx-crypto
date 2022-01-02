@@ -31,11 +31,43 @@ export const actions = {
                     symbolObj.setPrice(price, currentTime)
                     lastPrices.push(symbolObj)
                 }
-                console.log(lastPrices)
+                //console.log(lastPrices)
                 
                 commit('SET_PRICES', { 
                     prices: lastPrices, 
                     volatilities: volatilities, 
+                    time: currentTime 
+                })
+
+                return response
+            })
+        })
+    },
+    async getCandles({commit}, { symbol, interval, startTime, endTime }) {
+        
+        const __FUNCTION__ = 'tickers/getCandles'
+        
+        return useCommiter(__FUNCTION__, () => {
+
+            return tickersService.getCandles({ symbol, interval, startTime, endTime })
+            .then(response => {
+                
+                let currentTime = response.data.time
+                let candles = []
+
+                for (let candle of response.data.data.candles)
+                    candles.push([
+                        parseInt(candle.openTime),
+                        parseFloat(candle.open),
+                        parseFloat(candle.high),
+                        parseFloat(candle.low),
+                        parseFloat(candle.close),
+                    ])
+
+                commit('SET_CANDLES', { 
+                    symbol: symbol, 
+                    interval: interval, 
+                    candles: candles, 
                     time: currentTime 
                 })
 
@@ -77,6 +109,7 @@ export const state = {
     usdCoins: ['USDT','BUSD'],
     mainCoins: ['BTC','ETH'],
     prices: {},
+    candles: {},
     volatilities: [],
     firstTime: null,
     lastTime: null,
@@ -88,6 +121,11 @@ export const mutations = {
         state.volatilities = volatilities
         state.lastTime = time
         console.log(`Precios actualizados (${new Date(time).toLocaleString()})`)
+    },
+    SET_CANDLES (state, { time, symbol, candles /*, interval, startTime, endTime*/ }) {
+        state.candles[symbol] = candles
+        //state.lastTime = time
+        console.log(`Velas de ${symbol} actualizadas (${new Date(time).toLocaleString()})`)
     },
 }
 
@@ -105,9 +143,12 @@ export const getters = {
         //console.log((time || state.lastTime),'>>>', symbol, symbolObj)
         return symbolObj ? symbolObj.price : null
     },
+    candles: (state) => (symbol) => { 
+        return state.candles[symbol]
+    },
     getVolatilities: state => {
         return state.volatilities
     }, 
-    getCurrency: state => state.currency,
-    getCurrencyPrice: (state, getters) => getters.getPrice('BTC' + getters.getCurrency) || 0,
+    getCurrency: state => currency => currency ? currency : state.currency,
+    getCurrencyPrice: (state, getters) => currency => getters.getPrice('BTC' + getters.getCurrency(currency)) || 0,
 }

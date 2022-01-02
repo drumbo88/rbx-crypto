@@ -4,16 +4,13 @@ import axios from 'axios';
 
 // Modules
 import * as users from './modules/users';
-import * as tickers from './modules/tickers';
-import * as wallet from './modules/wallet';
+import * as symbols from './modules/symbols';
 
 Vue.use(Vuex)
 
 export default new Vuex.Store({
     modules: {
-        users,
-        tickers,
-        wallet,
+        users, symbols, ...symbols.modules
     },
     state: {
         promises: {},

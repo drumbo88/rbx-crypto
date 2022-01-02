@@ -2,11 +2,14 @@ let BinanceApi = require('binance-api-node').default
 
 
 let myBinance = {
+	fiatCoin: 'USD',
+	stableCoin: 'USDT',
+	stableCoins: ['USDT','BUSD'],
 	api: BinanceApi({
 		apiKey: process.env.BINANCE_API_KEY,
 		apiSecret: process.env.BINANCE_API_SECRET,
 		useServerTime: true,
-		recvWindow: 20000,
+		recvWindow: 60000,
 	}),
 	time() {
 		return this.api.time()
@@ -77,8 +80,12 @@ let myBinance = {
 			await this.myBalance()
 		return this.balance.assets
 	},
+	async getCandles(params) {
+		return await this.api.candles(params)
+	},
 	async myBalance() 
 	{
+		// Obtengo precios y balance de cuenta
 		this.prices = await this.getPrices()
 		let accountInfo = await this.api.accountInfo()
 		let balances = accountInfo.balances
@@ -87,42 +94,53 @@ let myBinance = {
 
 		this.balance.assets = []
 
-		//global.btc = 0.00;
+		// Por cada elemento del balance [{ asset: 'BTC', free: '0.4321', locked: '0.1234' },...]
 		for (let i=0; i<balances.length; i++ ) {
 			let obj = balances[i]
-			let asset = obj.asset
-			obj.name = asset
+			// Tomo valores, si posee cantidad paso al que sigue
+			let asset = obj.name = obj.asset
 			obj.available = parseFloat(obj[FIELD_AVAILABLE]);
 			obj.onOrder = parseFloat(obj[FIELD_ON_ORDER]);
-			obj.porc = 0;
-			obj.btcAvailable = 0;
-			obj.btcTotal = 0;
-			obj.trades = []
 			obj.quantity = obj.available + obj.onOrder;
-			if ( asset == 'BTC' ) {
-				obj.nameTradeBTC = asset + 'USDT';
-				obj.btcAvailable = obj.available;
+			if (!obj.quantity) {
+				continue
 			}
-			else if ( asset == 'USDT' ) obj.btcAvailable = obj.available / this.prices.BTCUSDT;
+			obj.porc = 0;
+			obj.scAvailable = 0;
+			obj.scTotal = 0;
+			obj.trades = []
+			// Si el activo es stableCoin, su valor es 1
+			let scValue
+			if ( this.stableCoins.indexOf(asset) != -1 ) {
+				obj.nameTradeStable = asset + this.fiatCoin;
+				scValue = 1
+			}
+			// Sino se busca su valor respecto a una stableCoin
 			else {
-				obj.nameTradeBTC = asset + 'BTC';
-				obj.btcAvailable = obj.available * this.prices[obj.nameTradeBTC];
+				for (let stableCoin of this.stableCoins) {
+					scValue = this.prices[asset + stableCoin]
+					if (scValue) {
+						obj.nameTradeStable = asset + stableCoin
+						break;
+					}
+				}
+				if (!scValue) {
+					scValue = this.prices[asset + 'BTC']
+					if (!scValue) {
+						console.error(`${asset} no tiene stableCoin asociada.`)
+						continue;
+					}
+				}
 			}
-			if ( asset == 'BTC' ) obj.btcTotal = obj.available + obj.onOrder;
-			else if ( asset == 'USDT' ) obj.btcTotal = (obj.available + obj.onOrder) / this.prices.BTCUSDT;
-			else obj.btcTotal = (obj.available + obj.onOrder) * this.prices[asset+'BTC'];
-			if ( isNaN(obj.btcAvailable) ) obj.btcAvailable = 0;
-			if ( isNaN(obj.btcTotal) ) obj.btcTotal = 0;
-			obj.usdUnitPrice = obj.btcTotal * this.prices[asset+'USDT'];
-			obj.usdTotal = obj.btcTotal * this.prices.BTCUSDT;
-
-			if ( obj.usdTotal < 1) { 
-				//if (obj.usdTotal>0) console.log(obj); 
-				if (!obj.usdTotal) 
-					continue;
+			// Calculo valores de stableCoin, y si es muy pequeño lo descarto
+			obj.scAvailable = obj.available * scValue;
+			obj.scOnOrder = obj.onOrder * scValue;
+			obj.scTotal = obj.scAvailable + obj.scOnOrder;
+			if ( obj.scTotal < 1) { 
+				continue;
 			}
-
-			this.totalBTC += obj.btcTotal;
+			
+			this.totalStable += obj.scTotal;
 			this.balance.assets.push(obj);
 		}
 
@@ -147,31 +165,33 @@ let myBinance = {
 
 		for (let i=0; i<assets.length; i++)
 		{
-			if (!filters.symbol || filters.symbol == assets[i].nameTradeBTC)
+			if (!filters.symbol || filters.symbol == assets[i].nameTradeStable)
 			{
 				promises.push(new Promise(async (res) => {
 					let obj = assets[i]
+					const symbol = this.prices.hasOwnProperty(obj.nameTradeStable)
+						? obj.nameTradeStable : 1
 					obj.trades = [] // RESETEA TRADES
 					let orders = [], trades = []
 					if (obj.nameTradeBTC && obj.nameTradeBTC != 'BTCUSDT') {
 						try {
 							[orders, trades] = await Promise.all([
-								this.api.allOrders({ symbol: obj.nameTradeBTC }),
-								this.api.myTrades({ symbol: obj.nameTradeBTC })
+								this.api.allOrders({ symbol: symbol }),
+								this.api.myTrades({ symbol: symbol })
 							])
 						}
 						catch (err) {
 							console.log("Error "+obj.nameTradeBTC, err.message, err.stack)
 						}
 					}
-					if (!orders.length && obj.btcTotal) {
+					if (!orders.length && obj.scTotal) {
 						let price = (obj.nameTradeBTC == 'BTCUSDT') ? 1 : this.prices[obj.nameTradeBTC]
 						orders.push({
 							side: 'BUY',
 							status: 'GENERATED',
 							symbol: obj.nameTradeBTC,
 							price: this.prices[obj.nameTradeBTC],
-							executedQty: obj.btcTotal / price,
+							executedQty: obj.scTotal / price,
 						})
 					}
 					/*if (true && obj.nameTradeBTC=='BNBBTC' ) {

@@ -4,6 +4,7 @@
 
 <script>
 import Highcharts from "highcharts";
+import { mapActions, mapGetters } from 'vuex';
 
 export default {
     props: {
@@ -16,24 +17,47 @@ export default {
         symbol: {
             type: String,
         },
-    },
-    async created() {
-        const VueThis = this
-        
-        await Highcharts.getJSON('https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/new-intraday.json', function (data) {
-            VueThis.data = data
-            VueThis.loadChart()
-        })
-        //.catch(e => console.error(e))
+        interval: {
+            type: String,
+        },
+        startTime: {
+            type: String,
+        },
+        endTime: {
+            type: String,
+        },
     },
     data: () => ({
-        data: [],
+        error: '',
+        range: 2,
         plotPercentages: [5,10,15,20],
         plotLinesVisible: null,
         value0: null,
     }),
+    async mounted() {
+        this.loadChart()
+        setInterval(() => this.loadChart(), 1 * 60000)        
+
+        // https://cdn.jsdelivr.net/gh/highcharts/highcharts@v7.0.0/samples/data/new-intraday.json
+        /*await Highcharts.getJSON(this.url, function (data) {
+            VueThis.data = data
+            VueThis.loadChart()
+        })*/
+        //.catch(e => console.error(e))
+    },
     methods: {
-        loadChart() {
+        ...mapActions('tickers', ['getCandles']),
+        async getChartData () 
+        {
+            await this.getCandles({ 
+                symbol:     this.symbol,
+                interval:   this.getInterval,
+                startTime:  this.getStartTime,
+                endTime:    this.getEndTime,
+            })
+        },
+        async loadChart() {    
+            await this.getChartData()
             // Create the chart
             Highcharts.stockChart('container', this.chartOptions)
         },
@@ -57,10 +81,11 @@ export default {
             const yAxisID = 'yA0'
             let points = axis.series[0].points,
                 yAxis = axis.chart.get(yAxisID),
-                value0
+                value0,
+                plotLinesLength = yAxis.plotLinesAndBands.length
 
             // Punto de referencia inicial: promedio
-            if (this.plotLinesVisible === null) {
+            if (this.plotLinesVisible === null || !plotLinesLength) {
                 let total = 0, avgLength = 0
 
                 for (let point of points) {
@@ -130,7 +155,6 @@ export default {
                 //value = valores del mouse
                 value0 = newValue0
 
-                let plotLinesLength = yAxis.plotLinesAndBands.length
                 yAxis.plotLinesAndBands[0].options.isAVG = false
                 
                 for (let i=0; i<plotLinesLength; i++)
@@ -149,6 +173,7 @@ export default {
         },
     },
     computed: {
+        ...mapGetters('tickers', ['candles']),
         getTitle() {
             if (this.symbol && !this.title)
                 return 'Cambio de '+this.symbol
@@ -156,8 +181,10 @@ export default {
         },
         chartOptions() {
             const vueComp = this
+            const candles = this.candles(this.symbol)
             let container = document.getElementById('container')
-            return {
+console.log(this.range)
+            const data= {
                 chart: {
                     //height: 300,
                     events: {
@@ -171,6 +198,10 @@ export default {
                             //rangeFromLabel.textContent      = "Hasta";
                             if (vueComp.plotPercentages.length)
                                 vueComp.plotLines(this.get('xA0'))
+                            for (let i=0; i<this.rangeSelector.buttons.length; i++)
+                                this.rangeSelector.buttons[i].events = {
+                                    click: function () { vueComp.range = i }
+                                }
                         },
                         click: function(e) {
                             if (vueComp.plotPercentages.length)
@@ -246,7 +277,7 @@ export default {
                         dataGrouping: {
                             forced: true,
                             units: [['month', [1]]]
-                        }
+                        },
                     }],
                     buttonTheme: {
                         //width: 60
@@ -258,7 +289,11 @@ export default {
                     labelStyle: {
                         color: '#eee',
                     },
-                    selected: 3
+                    selected: this.range,
+                    events: {
+                    click: function() {
+                        alert(this)
+                    }}
                 },
 
                 title: {
@@ -275,7 +310,7 @@ export default {
 
                 series: [{
                     name: this.symbol,
-                    data: this.data,
+                    data: candles,
                     type: 'candlestick',
                     marker: {
                         enabled: null, // auto
@@ -299,6 +334,7 @@ export default {
                 },
                 
             }
+            return data
         }
     }
 }

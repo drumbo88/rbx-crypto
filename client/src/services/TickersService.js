@@ -10,6 +10,17 @@ export default {
 
         return apiClient.get(qs)
     },
+    getCandles({ symbol, interval, startTime, endTime }) {
+        
+        let qs = `candles/${symbol}`
+        qs += '/' + (interval || '5m')
+        if (startTime || endTime) {
+            qs += '/' + (startTime || '')
+            qs += '/' + (endTime || '')
+        }
+
+        return apiClient.get(qs)
+    },
     intervals: {},
     setInterval(interval, fnName) {
         if (!this.intervals[fnName])

@@ -64,7 +64,7 @@
 						await Promise.all(promises)
 					}
 					catch (error) {
-						console.log(error)
+						console.error(error)
 					}
 				}
 			},
@@ -101,7 +101,7 @@
 
 			//getCurrencyPrice() { return this.getPrice('BTC' + this.getCurrency) || 0 },
 			getIntervalMins() {
-				let mins = this.mins || 1
+				let mins = this.mins || 0.05
 				const unSeg = 1/60
 				if (mins < unSeg)
 					mins = unSeg
@@ -113,16 +113,18 @@
 				let categories = []
 				let serieObj = { name: 'Assets', colorByPoint: true, data: [] }
 
-				if (this.getCurrencyPrice) {
-					this.getAssetsPrices(this.getCurrency).forEach(asset => {
+				const currency = this.getCurrency()
+				const cyPrice = this.getCurrencyPrice()
+				if (cyPrice) {
+					this.getAssetsPrices(currency).forEach(asset => {
 						categories.push(asset.name)
-						let value = this.getCurrency ? asset.total : asset.quantity
+						let value = currency ? asset.total : asset.quantity
 						if (value > 0)
 							serieObj.data.push({ 
 								name: asset.name, 
 								y: value,
 								balanceUSDT: value.toFixed(2),
-								priceBTC: (asset.price / this.getCurrencyPrice).toFixed(8),
+								priceBTC: (asset.price / cyPrice).toFixed(8),
 								priceUSDT: (asset.price).toFixed(2),
 								balancePerc: (100 * value / this.totalBalanceUSDT).toFixed(2),
 								changePerc: (10-20*Math.random()).toFixed(2),
@@ -133,8 +135,7 @@
 				}
 				let series = [serieObj]
 				
-				//const cyPrice = this.getCurrencyPrice
-				const totalBalance = this.getTotalBalance(this.getCurrency)
+				const totalBalance = this.getTotalBalance(currency)
 				
 				let options = {
 					chart: { type: 'column' },
@@ -146,7 +147,7 @@
 					},
 					yAxis: {
 						// Nombre del EJE Y
-						title: { text: this.getCurrency ? 'Equivalente '+this.getCurrency : 'Cantidades' },
+						title: { text: currency ? 'Equivalente '+currency : 'Cantidades' },
 						// Medidas del EJE Y
 						/*labels: { 
 							formatter() { 
