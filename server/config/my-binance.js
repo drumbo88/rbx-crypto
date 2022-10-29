@@ -27,20 +27,20 @@ let myBinance = {
 		// BASE_SYMBOL: { ... },
 	},
 	trades: [],
-	async parseRes(data) { 
+	async parseRes(data) {
 		return { ...this.res, _USDT: this.prices.BTCUSDT, data: data || null, time: await this.api.time() }
 	},
-	async getPrices() { 
+	async getPrices() {
 		// Get ticker prices
 		ticker = await this.api.prices()
-		
+
 		this.prices = {}
-		for ( let symbol in ticker ) 
+		for ( let symbol in ticker )
 			this.prices[symbol] = parseFloat(ticker[symbol]);
-			
+
 		return this.prices
 	},
-	async getVolatilities() { 
+	async getVolatilities() {
 		this.volatilities = {}
 		//if (!this.balance.assets.length)
 			//await this.myBalance()
@@ -50,10 +50,10 @@ let myBinance = {
 			//if (this.prices[symbol] > 1) {
 				/*let symbol = this.balance.assets[i].nameTradeBTC
 				promises.push(new Promise(async res => {
-					const params = { 
+					const params = {
 						symbol,
-						interval: '5m', 
-						limit: 5 
+						interval: '5m',
+						limit: 5
 					}
 					try {
 						candles = await this.api.candles(params)
@@ -83,7 +83,7 @@ let myBinance = {
 	async getCandles(params) {
 		return await this.api.candles(params)
 	},
-	async myBalance() 
+	async myBalance()
 	{
 		// Obtengo precios y balance de cuenta
 		this.prices = await this.getPrices()
@@ -136,18 +136,18 @@ let myBinance = {
 			obj.scAvailable = obj.available * scValue;
 			obj.scOnOrder = obj.onOrder * scValue;
 			obj.scTotal = obj.scAvailable + obj.scOnOrder;
-			if ( obj.scTotal < 1) { 
+			if ( obj.scTotal < 0.01) {
 				continue;
 			}
-			
+
 			this.totalStable += obj.scTotal;
 			this.balance.assets.push(obj);
 		}
 
 		return this.balance
 	},
-	
-	async myTrades(filters) 
+
+	async myTrades(filters)
 	{
 		if (filters.coin ^ filters.base)
 			return console.error("Necesita ambos parámetros 'coin' y 'base'")
@@ -212,8 +212,8 @@ let myBinance = {
 							for (let k=0; k<orderTrades.length; k++)
 								commissionBTC += parseFloat(orderTrades[k].commission)
 						}
-						else commissionBTC = (order.price * order.executedQty / 1000) 
-						
+						else commissionBTC = (order.price * order.executedQty / 1000)
+
 						obj.trades.push({
 							time: order.time,
 							//date: new Date(order.time),
@@ -231,19 +231,19 @@ let myBinance = {
 				}));
 			}
 		}
-		
+
 		if (promises.length)
 			await Promise.all(promises)
 
 		let trades = []
-		if (filters.symbol) 
+		if (filters.symbol)
 			trades = assets.find(a => a.asset == filters.coin).trades // .find(base)
 		else {
 			for (let i=0; i<assets.length; i++)
 				this.trades = this.trades.concat(assets[i].trades)
 			trades = this.trades
 		}
-		
+
 		delete filters.symbol
 		delete filters.coin
 		delete filters.base
@@ -259,7 +259,7 @@ let myBinance = {
 		})
 		.sort((a,b) => { return a.time > b.time ? 1 : -1 })
 	},
-	async myFilledBuys(filters) 
+	async myFilledBuys(filters)
 	{
 		filters = { ...filters || {}, side: 'BUY'/*, status: 'FILLED'*/ }
 		//if (!this.trades.length)
@@ -267,7 +267,7 @@ let myBinance = {
 
 		return this.filledBuys
 	},
-	async myFilledSells(filters) 
+	async myFilledSells(filters)
 	{
 		filters = { ...filters || {}, side: 'SELL'/*, status: 'FILLED'*/ }
 		//if (!this.trades.length)
@@ -275,7 +275,7 @@ let myBinance = {
 
 		return this.filledSells
 	},
-	async myFilledTrades(filters) 
+	async myFilledTrades(filters)
 	{
 		filters = { ...filters || {}/*, quantity: 0*/ }
 		//if (!this.trades.length)
